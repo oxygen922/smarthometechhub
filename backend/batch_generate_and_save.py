@@ -370,46 +370,76 @@ Generate the complete article now."""
             return None
 
     def find_unique_image(self, keywords, category_slug):
-        """查找并上传图片到R2，返回R2 URL"""
+        """查找并上传图片到R2，返回R2 URL - 使用智能随机策略"""
         try:
             print(f"  🔍 搜索图片: {keywords}")
 
-            # 从所有配置的来源搜索图片
-            images = self.image_finder.search_all_sources(keywords, per_page=20)
+            # 从所有配置的来源搜索图片（已打乱顺序）
+            images = self.image_finder.search_all_sources(keywords, per_page=20, shuffle=True)
 
             if not images or len(images) == 0:
                 print(f"  ⚠️  使用备用图片源")
                 return f"https://source.unsplash.com/1200x630/?{keywords.replace(' ', ',')}"
 
-            # 按分辨率排序（高分辨率优先）
-            sorted_images = sorted(images, key=lambda img: img.get('width', 0) * img.get('height', 0), reverse=True)
+            # 智能随机策略：
+            # 1. 过滤出高质量的图片（分辨率 >= 1000x600）
+            # 2. 从高质量图片中随机选择
+            # 3. 确保来源多样性
 
-            # 查找未使用的图片
-            for img in sorted_images:
-                source_url = img['urls']['regular']
+            high_quality_images = [
+                img for img in images
+                if img.get('width', 0) >= 1000 and img.get('height', 0) >= 600
+            ]
 
-                # 检查是否已使用（基于原始URL）
-                if source_url not in self.used_images:
-                    # 下载并上传到R2
-                    print(f"  ⬇️  下载并上传到R2...")
-                    r2_url = self.upload_to_r2_from_url(source_url, keywords, category_slug)
+            if not high_quality_images:
+                # 如果没有高质量图片，使用所有图片的前80%
+                high_quality_images = images[:int(len(images) * 0.8)]
 
-                    if r2_url:
-                        # 标记原始URL为已使用
-                        self.used_images.add(source_url)
-                        photographer = img['user']['name']
-                        source = img.get('source', 'unknown')
-                        print(f"  ✓ 上传成功 (来源: {source}, 摄影师: {photographer}, 已使用: {len(self.used_images)}张)")
-                        return r2_url
-                    else:
-                        print(f"  ⚠️  R2上传失败，尝试下一张")
+            print(f"  📊 高质量图片: {len(high_quality_images)}/{len(images)}张")
 
-            # 如果所有图片都上传失败，使用第一张的原始URL（fallback）
-            best_image = sorted_images[0]
-            image_url = best_image['urls']['regular']
-            photographer = best_image['user']['name']
-            print(f"  ⚠️  R2上传全部失败，使用原始URL (摄影师: {photographer})")
-            return image_url
+            # 优先选择未使用的图片
+            available_images = [
+                img for img in high_quality_images
+                if img['urls']['regular'] not in self.used_images
+            ]
+
+            if not available_images:
+                # 如果都使用过了，从高质量图片中随机选择
+                available_images = high_quality_images
+                print(f"  🔄 所有图片都已使用，重新随机选择")
+
+            # 从可用图片中随机选择一张（增加随机性！）
+            import random
+            selected_image = random.choice(available_images)
+            source_url = selected_image['urls']['regular']
+
+            # 下载并上传到R2
+            print(f"  ⬇️  下载并上传到R2...")
+            r2_url = self.upload_to_r2_from_url(source_url, keywords, category_slug)
+
+            if r2_url:
+                # 标记原始URL为已使用
+                self.used_images.add(source_url)
+                photographer = selected_image['user']['name']
+                source = selected_image.get('source', 'unknown')
+                resolution = f"{selected_image.get('width', 0)}x{selected_image.get('height', 0)}"
+                print(f"  ✓ 上传成功 (来源: {source}, 摄影师: {photographer}, 分辨率: {resolution}, 已使用: {len(self.used_images)}张)")
+                return r2_url
+            else:
+                print(f"  ⚠️  R2上传失败，尝试其他图片")
+                # 如果上传失败，尝试下一张
+                for img in available_images[:5]:  # 最多尝试5张
+                    if img['urls']['regular'] != source_url:
+                        alt_url = img['urls']['regular']
+                        r2_url = self.upload_to_r2_from_url(alt_url, keywords, category_slug)
+                        if r2_url:
+                            self.used_images.add(alt_url)
+                            print(f"  ✓ 备选上传成功 (来源: {img.get('source', 'unknown')})")
+                            return r2_url
+
+                # 如果还是失败，返回原始URL作为fallback
+                print(f"  ⚠️  R2上传全部失败，使用原始URL")
+                return source_url
 
         except Exception as e:
             print(f"  ⚠️  图片获取失败: {str(e)}")

@@ -9,6 +9,7 @@ import os
 import boto3
 import requests
 import hashlib
+import random
 from datetime import datetime
 from dotenv import load_dotenv
 from botocore.exceptions import NoCredentialsError, ClientError
@@ -172,7 +173,7 @@ class SmartImageFinder:
 
         return []
 
-    def search_all_sources(self, keywords, per_page=10):
+    def search_all_sources(self, keywords, per_page=10, shuffle=True):
         """从所有配置的来源搜索图片"""
         all_images = []
 
@@ -200,6 +201,12 @@ class SmartImageFinder:
             print(f"✓ {len(pixabay_images or [])}张")
 
         print(f"  📊 总共找到 {len(all_images)} 张图片")
+
+        if all_images and shuffle:
+            # 打乱顺序增加随机性
+            random.shuffle(all_images)
+            print(f"  🎲 已打乱图片顺序")
+
         return all_images if all_images else None
 
     def download_image(self, image_url, local_path):
