@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   // 图片优化配置
   images: {
     remotePatterns: [
+      // Cloudflare R2
+      {
+        protocol: 'https',
+        hostname: 'pub-a6a4ae7f5151464cb2be257af37faafe.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ceec996a81ee29acc1eb188b0a2017e4.r2.cloudflarestorage.com',
+      },
       // Unsplash
       {
         protocol: 'https',

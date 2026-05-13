@@ -1,12 +1,13 @@
 /**
- * 站点头部组件 - 简洁版，参考原版网站设计
+ * Site Header - Smart Home TechHub
+ * 参考现代化设计，优化导航栏体验
  */
 
 'use client';
 
 import { SiteConfig } from '@/types/article';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Search, Menu, X, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface SiteHeaderProps {
@@ -18,81 +19,85 @@ export function SiteHeader({ site }: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-slate-900 border-b border-slate-700">
-      {/* 单行导航栏 - Taste Skill优化 */}
-      <div className="bg-slate-900">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-4">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3 flex-shrink-0">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-lg">{site.name.charAt(0)}</span>
-              </div>
-              <div>
-                <h1 className="font-sans text-xl font-bold text-white leading-none tracking-tight">
-                  {site.name}
-                </h1>
-              </div>
-            </Link>
+    <header className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+      scrolled ? 'bg-brand-dark/95 backdrop-blur-md shadow-lg shadow-black/20' : 'bg-brand-dark'
+    }`}>
+      <div className="container mx-auto px-4">
+        {/* Main Nav Row */}
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="h-9 w-9 rounded-lg bg-brand-primary flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:shadow-brand-primary/20 transition-shadow shrink-0">
+              <span className="text-white font-black text-lg">S</span>
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-base font-black text-white leading-none tracking-tight uppercase">
+                SmartHome<span className="text-brand-primary">Tech</span>Hub
+              </h1>
+            </div>
+          </Link>
 
-            {/* 导航链接 - Desktop 居中 */}
-            <nav className="hidden md:flex flex-1 justify-center">
-              <ul className="flex items-center justify-center">
-                {site.categories.map((category, index) => (
-                  <li key={category.id} className="flex items-center">
-                    {index > 0 && <span className="mx-4 text-slate-600 text-xs">/</span>}
-                    <Link
-                      href={`/category/${category.slug}`}
-                      className="nav-link text-slate-300 hover:text-brand-accent transition-colors duration-200 relative group px-2 py-1"
-                    >
-                      {category.name}
-                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-accent transition-all duration-300 group-hover:w-full"></span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center">
+            <ul className="flex items-center gap-1">
+              {site.categories.map((category) => (
+                <li key={category.id}>
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="px-3 py-2 text-[12px] font-medium text-slate-400 hover:text-white rounded-md transition-all whitespace-nowrap"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-            {/* 移动端菜单按钮 */}
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
+            <div className="hidden lg:flex items-center bg-brand-surface/60 border border-slate-700/40 rounded-lg px-3 py-1.5 focus-within:border-brand-primary/40 transition-colors">
+              <Search className="h-3.5 w-3.5 text-slate-500 mr-2 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="bg-transparent text-sm text-slate-300 placeholder:text-slate-600 outline-none w-36"
+              />
+            </div>
+            <div className="hidden xl:flex items-center gap-1.5 pl-2 text-xs text-slate-500">
+              <Zap className="h-3 w-3 text-brand-primary" />
+              <span className="font-medium">New Weekly</span>
+            </div>
             <button
-              className="md:hidden flex items-center justify-center p-2 text-slate-100 rounded-md flex-shrink-0"
+              className="md:hidden flex items-center justify-center p-2 text-slate-300 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* 移动端菜单 */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-900 border-t border-slate-700">
-          <nav className="container mx-auto px-4 py-4">
-            <div className="space-y-2">
+        <div className="md:hidden bg-brand-dark/98 backdrop-blur-md border-t border-slate-800/40 animate-slide-down">
+          <nav className="container mx-auto px-4 py-3">
+            <div className="space-y-0.5">
               {site.categories.map((category) => (
                 <Link
                   key={category.id}
                   href={`/category/${category.slug}`}
-                  className="block py-3 px-4 rounded-lg hover:bg-slate-800 transition-colors"
+                  className="block py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{category.icon}</span>
-                      <p className="text-sm font-bold text-slate-100 uppercase tracking-wide">
-                        {category.name}
-                      </p>
-                    </div>
-                    <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="text-sm font-medium text-slate-300">{category.name}</span>
+                    <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>

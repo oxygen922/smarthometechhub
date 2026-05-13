@@ -21,12 +21,13 @@ export function HeroGrid({ featuredArticles }: HeroGridProps) {
 
   const getCategoryIcon = (category: string) => {
     const iconMap: Record<string, string> = {
-      '价格监测': '💰',
-      '攻略': '📖',
-      '签证攻略': '✈️',
-      '续航测试': '🔋',
-      '价格追踪': '📊',
-      '价格对比': '⚖️',
+      'robot-vacuums': '🤖',
+      'smart-toilets': '🚽',
+      'smart-lawn-mowers': '🌿',
+      'smart-kitchen': '🍳',
+      'air-quality': '💨',
+      'home-security': '🔒',
+      'smart-lighting': '💡',
     };
     return iconMap[category] || '📰';
   };

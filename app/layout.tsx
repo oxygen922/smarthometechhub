@@ -78,10 +78,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
 
@@ -118,7 +119,7 @@ export default function RootLayout({
       lang="en-US"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-900">
+      <body className="min-h-full flex flex-col bg-brand-bg">
         <SiteHeader site={siteConfig} />
         <main className="flex-1">{children}</main>
         <SiteFooter site={siteConfig} />

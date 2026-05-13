@@ -90,12 +90,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           {/* Tags */}
           {article.tags && article.tags.length > 0 && (
             <div className="mt-12 pt-8 border-t">
-              <h3 className="font-semibold mb-4">Tags</h3>
+              <h3 className="font-semibold mb-4 text-gray-900">Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {article.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-3 py-1 text-sm bg-brand-light rounded-full"
+                    className="px-3 py-1 text-sm bg-gray-100 text-gray-900 rounded-full"
                   >
                     {tag}
                   </span>

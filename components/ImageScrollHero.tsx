@@ -35,7 +35,7 @@ export function ImageScrollHero({
   }, []);
 
   return (
-    <section className="relative h-screen overflow-hidden">
+    <section className="relative h-[60vh] overflow-hidden">
       {/* 背景图片 - 视差效果 */}
       <div
         className="absolute inset-0 transform scale-110 bg-gradient-to-br from-brand-primary to-brand-secondary"
@@ -58,20 +58,20 @@ export function ImageScrollHero({
 
       {/* 内容 */}
       <div className="relative h-full flex items-center justify-center text-white px-4">
-        <div className="max-w-5xl mx-auto text-center space-y-6">
-          <p className="text-sm md:text-base font-semibold tracking-[0.3em] uppercase text-brand-accent animate-fade-in">
+        <div className="max-w-4xl mx-auto text-center space-y-4">
+          <p className="text-xs md:text-sm font-semibold tracking-[0.2em] uppercase text-brand-accent animate-fade-in">
             {subtitle}
           </p>
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold leading-tight animate-slide-up">
+          <h1 className="font-serif text-3xl md:text-5xl lg:text-6xl font-bold leading-tight animate-slide-up">
             {title}
           </h1>
-          <p className="text-lg md:text-xl text-gray-200 max-w-3xl mx-auto leading-relaxed animate-slide-up-delayed">
+          <p className="text-base md:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed animate-slide-up-delayed">
             {description}
           </p>
           {ctaText && ctaLink && (
             <Link
               href={ctaLink}
-              className="inline-block mt-8 px-8 py-4 bg-brand-accent hover:bg-brand-accent/90 text-white font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg animate-fade-in-delayed"
+              className="inline-block mt-6 px-6 py-3 bg-brand-accent hover:bg-brand-accent/90 text-white font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg animate-fade-in-delayed text-sm"
             >
               {ctaText}
             </Link>
