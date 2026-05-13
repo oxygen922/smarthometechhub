@@ -1,53 +1,21 @@
 /**
- * Next.js Configuration - Cloudflare Pages (OpenNext)
+ * Next.js Configuration - Standard Configuration
  */
 import type { NextConfig } from "next";
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-
-// 本地开发时初始化 Cloudflare 绑定
-if (process.env.NODE_ENV === "development") {
-  initOpenNextCloudflareForDev();
-}
 
 const nextConfig: NextConfig = {
-  // 不需要 standalone，OpenNext 自己处理输出
-
-  // 图片优化 - 使用自定义 loader 替代 Vercel Image Optimization
+  // 图片优化配置
   images: {
-    loader: "custom",
-    loaderFile: "./lib/cf-image-loader.ts",
     remotePatterns: [
-      // Cloudflare R2
-      {
-        protocol: 'https',
-        hostname: 'pub-a6a4ae7f5151464cb2be257af37faafe.r2.dev',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ceec996a81ee29acc1eb188b0a2017e4.r2.cloudflarestorage.com',
-      },
       // Unsplash
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
-      // Travel Off Path
+      // 任何其他你需要的图片域名
       {
         protocol: 'https',
-        hostname: 'www.traveloffpath.com',
-      },
-      // BBC
-      {
-        protocol: 'https',
-        hostname: 'www.bbc.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'static.files.bbci.co.uk',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ichef.bbci.co.uk',
+        hostname: '**.amazonaws.com',
       },
     ],
     formats: ['image/avif', 'image/webp'],
@@ -60,22 +28,12 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
 
-  // Webpack 配置 - 客户端不需要 nodejs 模块
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    return config;
-  },
-
+  // 压缩和优化
   compress: true,
   productionBrowserSourceMaps: false,
   trailingSlash: false,
+
+  // 构建时忽略检查（开发时方便，生产环境建议修复）
   eslint: {
     ignoreDuringBuilds: true,
   },
