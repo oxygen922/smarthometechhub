@@ -298,21 +298,45 @@ Generate the complete article now."""
             return False
 
     def update_frontend_json(self):
-        """调用API更新前端JSON文件"""
+        """更新前端JSON文件"""
         try:
             print("🔄 正在更新前端数据...")
-            response = requests.post(
-                "http://localhost:3003/api/update-frontend",
-                timeout=30
-            )
 
-            if response.status_code == 200:
-                result = response.json()
-                print(f"✓ 前端数据已更新: {result.get('total', 0)} 篇文章")
-                return True
+            # 检测环境：GitHub Actions vs 本地开发
+            if os.getenv('GITHUB_ACTIONS'):
+                # GitHub Actions环境：直接使用Node.js脚本
+                import subprocess
+                backend_dir = os.path.dirname(os.path.abspath(__file__))
+                script_path = os.path.join(backend_dir, 'manual-update-json.js')
+
+                result = subprocess.run(
+                    ['node', script_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    cwd=os.path.dirname(backend_dir)
+                )
+
+                if result.returncode == 0:
+                    print(result.stdout)
+                    return True
+                else:
+                    print(f"⚠️  更新失败: {result.stderr}")
+                    return False
             else:
-                print(f"⚠️  更新失败: {response.status_code}")
-                return False
+                # 本地开发环境：调用API
+                response = requests.post(
+                    "http://localhost:3003/api/update-frontend",
+                    timeout=30
+                )
+
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✓ 前端数据已更新: {result.get('total', 0)} 篇文章")
+                    return True
+                else:
+                    print(f"⚠️  更新失败: {response.status_code}")
+                    return False
 
         except Exception as e:
             print(f"⚠️  更新前端数据出错: {str(e)}")
