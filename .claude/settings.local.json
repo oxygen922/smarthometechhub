@@ -59,7 +59,15 @@
       "Bash(python -c \"import yaml; y=yaml.safe_load\\(open\\('.github/workflows/daily-article-generation.yml', encoding='utf-8'\\)\\); print\\('  ✅ YAML语法正确'\\); print\\(f'  Jobs: {list\\(y[\\\\\"jobs\\\\\"].keys\\(\\)\\)}'\\); perms=y['jobs']['generate-articles'].get\\('permissions', {}\\); print\\(f'  Permissions: {perms}'\\); print\\(f'  ⚠️ 权限问题: {\\\\\"contents\\\\\" not in perms or perms.get\\(\\\\\"contents\\\\\"\\) != \\\\\"write\\\\\"}'\\)\")",
       "Bash(grep \"\\\\.env$\")",
       "Bash(git commit -m 'fix: 修复GitHub Actions的所有问题 *)",
-      "Bash(git commit -m 'fix: 修复GitHub Actions中前端数据更新错误 *)"
+      "Bash(git commit -m 'fix: 修复GitHub Actions中前端数据更新错误 *)",
+      "Bash(python migrate_all_images_to_r2.py)",
+      "Bash(tee migration_log.txt)",
+      "Bash(timeout 120 python quick_migrate_to_r2.py)",
+      "Bash(timeout 180 python quick_migrate_to_r2.py)",
+      "Bash(awk -F'\"' '/featuredImage:.*r2\\\\.dev/{print $2}' lib/articles-data.json)",
+      "Bash(python fix_duplicate_content.py)",
+      "Bash(python check_consistency.py)",
+      "Bash(git commit -m 'fix: 修复重复封面图问题，优化图片去重机制 *)"
     ]
   }
 }

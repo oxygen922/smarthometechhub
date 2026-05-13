@@ -1,0 +1,79 @@
+✓ 图片源: Unsplash
+======================================================================
+🚀 开始批量迁移图片到R2
+======================================================================
+
+找到 5 篇文章需要迁移
+
+[1/5] 
+处理: 2026-05-13-air-quality-20260513224137.md
+  分类: air-quality
+  旧URL: https://source.unsplash.com/1200x630/?smart,air,quality,monitor,2026,home,air,pu...
+    🔍 source.unsplash.com不可用，搜索新图片...
+  📸 搜索所有图片源...
+    Unsplash... ✓ 20张
+  📊 总共找到 20 张图片
+    ✓ 找到新图片
+    ☁️  上传到R2...
+    ✓ 上传成功
+  ✓ 文件已更新
+
+[2/5] 
+处理: 2026-05-13-home-security-20260513224313.md
+  分类: home-security
+  旧URL: https://source.unsplash.com/1200x630/?modern,smart,home,security,system,2026,cam...
+    🔍 source.unsplash.com不可用，搜索新图片...
+  📸 搜索所有图片源...
+    Unsplash... ✓ 20张
+  📊 总共找到 20 张图片
+    ✓ 找到新图片
+    ☁️  上传到R2...
+    ✓ 上传成功
+  ✓ 文件已更新
+
+[3/5] 
+处理: 2026-05-13-smart-kitchen-20260513224612.md
+  分类: smart-kitchen
+  旧URL: https://source.unsplash.com/1200x630/?modern,intelligent,oven,2026,smart,kitchen...
+    🔍 source.unsplash.com不可用，搜索新图片...
+  📸 搜索所有图片源...
+    Unsplash... ✓ 20张
+  📊 总共找到 20 张图片
+    ✓ 找到新图片
+    ☁️  上传到R2...
+    ✓ 上传成功
+  ✓ 文件已更新
+
+[4/5] 
+处理: 2026-05-13-smart-lawn-mowers-20260513224250.md
+  分类: smart-lawn-mowers
+  旧URL: https://source.unsplash.com/1200x630/?robot,lawn,mower,2026,GPS,smart,home...
+    🔍 source.unsplash.com不可用，搜索新图片...
+  📸 搜索所有图片源...
+    Unsplash... ✓ 20张
+  📊 总共找到 20 张图片
+    ✓ 找到新图片
+    ☁️  上传到R2...
+    ✓ 上传成功
+  ✓ 文件已更新
+
+[5/5] 
+处理: 2026-05-13-smart-lighting-20260513224448.md
+  分类: smart-lighting
+  旧URL: https://source.unsplash.com/1200x630/?2026,smart,lighting,system,review,Philips,...
+    🔍 source.unsplash.com不可用，搜索新图片...
+  📸 搜索所有图片源...
+    Unsplash... ✓ 20张
+  📊 总共找到 20 张图片
+    ✓ 找到新图片
+    ☁️  上传到R2...
+    ✓ 上传成功
+  ✓ 文件已更新
+
+======================================================================
+🎉 迁移完成！
+✅ 成功: 5篇
+❌ 失败: 0篇
+======================================================================
+
+💡 提示：运行 node backend/manual-update-json.js 更新前端数据
