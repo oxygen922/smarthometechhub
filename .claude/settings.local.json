@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__web-reader__webReader",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3001)",
+      "Bash(npx skills *)",
+      "Bash(findstr :3002)",
+      "mcp__zread__get_repo_structure"
+    ]
+  }
+}

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tile Master</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #game {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #top {
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-weight: bold;
+        }
+        .tile {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            border: 2px solid #ddd;
+            cursor: pointer;
+        }
+        #area {
+            flex: 1;
+            position: relative;
+            margin: 10px;
+            width: 100%;
+            max-width: 500px;
+            min-height: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        @media (max-width: 600px) {
+            #area {
+                margin: 5px;
+            }
+            #top {
+                padding: 10px 15px;
+                font-size: 14px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            #top span {
+                font-size: 12px;
+            }
+            .btn {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+            .powerup {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            .slot {
+                width: 36px;
+                height: 36px;
+                font-size: 20px;
+            }
+            .slot-container {
+                gap: 3px;
+            }
+        }
+        .tile.disabled {
+            background: #d0d0d0 !important;
+            filter: brightness(0.6);
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+        #slots {
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .slot-container {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+        .slot {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.3);
+            border: 3px solid rgba(255,255,255,0.5);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+        }
+        .slot.filled {
+            background: white;
+        }
+        #screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+            padding: 20px;
+            text-align: center;
+        }
+        .btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .powerup {
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+            border: 2px solid white;
+            padding: 8px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .powerup:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+        .powerup:disabled {
+            background: rgba(200,200,200,0.5);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        h1 { font-size: 32px; margin-bottom: 15px; }
+        p { margin-bottom: 15px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="top">
+            <span id="level">Level 1</span>
+            <span id="move">Moves: 0</span>
+            <button id="shuffleBtn" class="powerup">🔄 Shuffle (<span id="shuffleCount">5</span>)</button>
+        </div>
+        <div id="area"></div>
+        <div id="slots">
+            <div class="slot-container"></div>
+        </div>
+        <div id="screen">
+            <h1>🎯 Tile Master</h1>
+            <p>Match 3 identical tiles to clear them!</p>
+            <button class="btn" id="startBtn">Start Game</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const startBtn = document.getElementById('startBtn');
+            if (startBtn) {
+                startBtn.onclick = function() {
+                    document.getElementById('screen').style.display = 'none';
+                    initGame();
+                };
+            }
+        };
+
+        var tiles = [];
+        var slots = [];
+        var moves = 0;
+        var level = 1;
+        var shuffleCount = 5;  // 重排道具数量
+        var area, slotContainer;
+
+        function initGame() {
+            area = document.getElementById('area');
+            slotContainer = document.querySelector('.slot-container');
+
+            if (!area || !slotContainer) {
+                return;
+            }
+
+            tiles = [];
+            slots = [];
+            moves = 0;
+            shuffleCount = 5;
+            updateShuffleButton();
+
+            document.getElementById('shuffleBtn').onclick = function() {
+                if (shuffleCount > 0) {
+                    shuffleTiles();
+                    shuffleCount--;
+                    updateShuffleButton();
+                }
+            };
+
+            generateTiles();
+            updateSlots();
+            render();
+        }
+
+        function generateTiles() {
+            var tileArray = [];
+            var types, tileCount;
+
+            if (level === 1) {
+                // 第一关：超简单教学，12个方块，3种图案
+                types = ['🐑', '🥕', '🌾'];
+                tileCount = 4;  // 4组，每组3个 = 12个
+
+
+                for (var i = 0; i < tileCount; i++) {
+                    var type = types[i % types.length];
+                    tileArray.push(type, type, type);
+                }
+            } else {
+                // 第二关：降低难度！120个方块（40组），8种图案
+                types = ['🐑', '🥕', '🌾', '🔥', '💧', '⭐', '🌙', '❤️'];
+                tileCount = 40;  // 40组，每组3个 = 120个
+
+                for (var i = 0; i < tileCount; i++) {
+                    var type = types[i % types.length];
+                    tileArray.push(type, type, type);
+                }
+            }
+
+            // 打乱
+            for (var i = tileArray.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = tileArray[i];
+                tileArray[i] = tileArray[j];
+                tileArray[j] = temp;
+            }
+
+            var tileIndex = 0;
+
+            if (level === 1) {
+                // 第一关布局：在500x600容器内
+                var layer1Positions = [
+                    {x: 100, y: 100}, {x: 225, y: 100}, {x: 350, y: 100},
+                    {x: 162, y: 200}, {x: 287, y: 200}
+                ];
+
+                for (var i = 0; i < layer1Positions.length && tileIndex < tileArray.length; i++) {
+                    tiles.push({
+                        id: tileIndex,
+                        type: tileArray[tileIndex],
+                        x: layer1Positions[i].x,
+                        y: layer1Positions[i].y,
+                        z: 0,
+                        covered: false
+                    });
+                    tileIndex++;
+                }
+
+                var layer2Positions = [
+                    {x: 125, y: 150}, {x: 250, y: 150},
+                    {x: 187, y: 225}, {x: 312, y: 225},
+                    {x: 75, y: 187}, {x: 375, y: 187}
+                ];
+
+                for (var i = 0; i < layer2Positions.length && tileIndex < tileArray.length; i++) {
+                    tiles.push({
+                        id: tileIndex,
+                        type: tileArray[tileIndex],
+                        x: layer2Positions[i].x,
+                        y: layer2Positions[i].y,
+                        z: 1,
+                        covered: false
+                    });
+                    tileIndex++;
+                }
+
+                while (tileIndex < tileArray.length) {
+                    tiles.push({
+                        id: tileIndex,
+                        type: tileArray[tileIndex],
+                        x: 50 + Math.random() * 400,  // 50-450px
+                        y: 100 + Math.random() * 400,  // 100-500px
+                        z: 2,
+                        covered: false
+                    });
+                    tileIndex++;
+                }
+            } else {
+                // 第二关布局：在500x600容器内，20层
+                var layers = 20;
+
+                for (var layer = 0; layer < layers && tileIndex < tileArray.length; layer++) {
+                    var isCoreArea = layer < 12;
+
+                    if (isCoreArea) {
+                        var centerX = 150 + Math.random() * 200;  // 150-350px
+                        var centerY = 150 + Math.random() * 250;  // 150-400px
+                        var spacing = 55;
+                        var tilesInThisLayer = Math.floor(Math.random() * 3) + 4;
+                    } else {
+                        var centerX = 50 + Math.random() * 400;  // 50-450px
+                        var centerY = 50 + Math.random() * 450;  // 50-500px
+                        var spacing = 70;
+                        var tilesInThisLayer = Math.floor(Math.random() * 2) + 3;
+                    }
+
+                    for (var t = 0; t < tilesInThisLayer && tileIndex < tileArray.length; t++) {
+                        var offsetX = (Math.random() - 0.5) * spacing * 2;
+                        var offsetY = (Math.random() - 0.5) * spacing * 2;
+                        var x = centerX + offsetX;
+                        var y = centerY + offsetY;
+
+                        // 限制在500x600容器内
+                        x = Math.max(0, Math.min(450, x));  // 0-450px
+                        y = Math.max(0, Math.min(550, y));  // 0-550px
+
+                        tiles.push({
+                            id: tileIndex,
+                            type: tileArray[tileIndex],
+                            x: x,
+                            y: y,
+                            z: layer,
+                            covered: false
+                        });
+                        tileIndex++;
+                    }
+                }
+            }
+
+            updateCovered();
+        }
+
+        function updateCovered() {
+            var TILE_SIZE_PCT_X = 50 / 500 * 100;
+            var TILE_SIZE_PCT_Y = 50 / 600 * 100;
+
+            for (var i = 0; i < tiles.length; i++) {
+                tiles[i].covered = false;
+
+                for (var j = 0; j < tiles.length; j++) {
+                    if (tiles[j].id === tiles[i].id) continue;
+                    if (tiles[j].z < tiles[i].z) continue;
+                    if (tiles[j].z === tiles[i].z && tiles[j].id <= tiles[i].id) continue;
+
+                    var x1 = tiles[i].x / 500 * 100;
+                    var y1 = tiles[i].y / 600 * 100;
+                    var x2 = tiles[j].x / 500 * 100;
+                    var y2 = tiles[j].y / 600 * 100;
+
+                    var left1 = x1, right1 = x1 + TILE_SIZE_PCT_X;
+                    var top1 = y1, bottom1 = y1 + TILE_SIZE_PCT_Y;
+                    var left2 = x2, right2 = x2 + TILE_SIZE_PCT_X;
+                    var top2 = y2, bottom2 = y2 + TILE_SIZE_PCT_Y;
+
+                    var overlap = !(left1 >= right2 || right1 <= left2 || top1 >= bottom2 || bottom1 <= top2);
+
+                    if (overlap) {
+                        tiles[i].covered = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function render() {
+            area.innerHTML = '';
+
+            // 按z-index排序
+            var sortedTiles = tiles.slice().sort(function(a, b) {
+                return a.z - b.z;
+            });
+
+            var disabledCount = 0;
+
+            for (var i = 0; i < sortedTiles.length; i++) {
+                var tile = sortedTiles[i];
+                var el = document.createElement('div');
+                el.className = 'tile';
+                el.textContent = tile.type;
+
+                // 获取容器实际尺寸，将像素转换为百分比
+                var areaWidth = area.offsetWidth;
+                var areaHeight = area.offsetHeight;
+                el.style.left = (tile.x / 500 * 100) + '%';  // 基于设计尺寸500px转换
+                el.style.top = (tile.y / 600 * 100) + '%';   // 基于设计尺寸600px转换
+                el.style.zIndex = tile.z;
+                el.setAttribute('data-info', tile.id + '-z' + tile.z);
+
+                if (tile.covered) {
+                    el.classList.add('disabled');
+                    disabledCount++;
+                } else {
+                    el.onclick = (function(id) {
+                        return function() {
+                            clickTile(id);
+                        };
+                    })(tile.id);
+                }
+
+                area.appendChild(el);
+            }
+
+        }
+
+        function clickTile(id) {
+
+            var tile = tiles.find(function(t) { return t.id === id; });
+            if (!tile || tile.covered) {
+                return;
+            }
+
+            moves++;
+            document.getElementById('move').textContent = 'Moves: ' + moves;
+
+            tiles = tiles.filter(function(t) { return t.id !== id; });
+            slots.push(tile.type);
+
+
+            updateSlots();
+            updateCovered();
+            render();
+            checkMatches();
+        }
+
+        function updateSlots() {
+            var slotEls = slotContainer.children;
+            for (var i = 0; i < 8; i++) {
+                slotEls[i].textContent = slots[i] || '';
+                slotEls[i].className = 'slot' + (slots[i] ? ' filled' : '');
+            }
+        }
+
+        function checkMatches() {
+            var counts = {};
+            for (var i = 0; i < slots.length; i++) {
+                counts[slots[i]] = (counts[slots[i]] || 0) + 1;
+            }
+
+            for (var type in counts) {
+                if (counts[type] >= 3) {
+
+                    var removed = 0;
+                    slots = slots.filter(function(t) {
+                        if (t === type && removed < 3) {
+                            removed++;
+                            return false;
+                        }
+                        return true;
+                    });
+
+                    updateSlots();
+
+                    if (tiles.length === 0 && slots.length === 0) {
+                        setTimeout(function() {
+                            level++;
+                            if (level > 2) {
+                                showScreen('🎉 You Win! 🎉', 'Play Again');
+                            } else if (level === 2) {
+                                showLevelTransition();
+                            } else {
+                                document.getElementById('level').textContent = 'Level ' + level;
+                                initGame();
+                            }
+                        }, 500);
+                    }
+                    return;
+                }
+            }
+
+            if (slots.length >= 8) {
+                showScreen('Game Over', 'Try Again');
+            } else if (tiles.length === 0 && slots.length === 0) {
+                setTimeout(function() {
+                    level++;
+                    if (level > 2) {
+                        showScreen('🎉 You Win! 🎉', 'Play Again');
+                    } else if (level === 2) {
+                        showLevelTransition();
+                    } else {
+                        document.getElementById('level').textContent = 'Level ' + level;
+                        initGame();
+                    }
+                }, 500);
+            }
+        }
+
+        function updateShuffleButton() {
+            var btn = document.getElementById('shuffleBtn');
+            var countSpan = document.getElementById('shuffleCount');
+            if (btn && countSpan) {
+                countSpan.textContent = shuffleCount;
+                btn.disabled = shuffleCount <= 0;
+            }
+        }
+
+        function shuffleTiles() {
+
+            // 保存所有方块的位置
+            var positions = tiles.map(function(t) { return {x: t.x, y: t.y}; });
+
+            // 打乱位置数组
+            for (var i = positions.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = positions[i];
+                positions[i] = positions[j];
+                positions[j] = temp;
+            }
+
+            // 把打乱后的位置分配给方块
+            for (var i = 0; i < tiles.length; i++) {
+                tiles[i].x = positions[i].x;
+                tiles[i].y = positions[i].y;
+            }
+
+            updateCovered();
+            render();
+
+        }
+
+        function showLevelTransition() {
+            var screen = document.getElementById('screen');
+            screen.innerHTML = '<h1>🎉 Level 1 Complete! 🎉</h1>' +
+                             '<p>Ready for the real challenge?</p>' +
+                             '<p style="color: #ff6b6b; font-size: 14px;">⚠️ Level 2 is MUCH harder!</p>' +
+                             '<p>8 slots • 120 tiles • 20 layers</p>' +
+                             '<p style="color: #4ecdc4; font-weight: bold;">🔄 5 Shuffle opportunities available</p>' +
+                             '<button class="btn" onclick="startLevel2()">Start Level 2</button>';
+            screen.style.display = 'flex';
+        }
+
+        function startLevel2() {
+            document.getElementById('screen').style.display = 'none';
+            document.getElementById('level').textContent = 'Level 2';
+            initGame();
+        }
+
+        function showScreen(title, btnText) {
+            var screen = document.getElementById('screen');
+            var isGameOver = title.includes('Game Over');
+            var btnAction = isGameOver && level === 2 ? 'restartLevel2()' : 'restart()';
+
+            screen.innerHTML = '<h1>' + title + '</h1>' +
+                             (title.includes('Win') ? '<p>Total Moves: ' + moves + '</p>' : '') +
+                             '<button class="btn" onclick="' + btnAction + '">' + btnText + '</button>';
+            screen.style.display = 'flex';
+        }
+
+        function restart() {
+            level = 1;
+            document.getElementById('screen').style.display = 'none';
+            initGame();
+        }
+
+        function restartLevel2() {
+            document.getElementById('screen').style.display = 'none';
+            initGame();
+        }
+
+        // 初始化槽位
+        (function() {
+            var container = document.querySelector('.slot-container');
+            if (container) {
+                for (var i = 0; i < 8; i++) {
+                    var slot = document.createElement('div');
+                    slot.className = 'slot';
+                    container.appendChild(slot);
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

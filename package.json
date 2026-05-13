@@ -1,0 +1,17 @@
+{
+  "name": "website-template",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "cf:build": "cd frontend && npm run cf:build",
+    "cf:preview": "cd frontend && npm run cf:preview",
+    "cf:deploy": "cd frontend && npm run cf:deploy"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

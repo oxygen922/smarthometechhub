@@ -1,0 +1,63 @@
+# 依赖包 - 这个SB node_modules绝对不能推送
+node_modules/
+.pnp
+.pnp.js
+
+# 构建产物 - 这些都是生成的垃圾
+.next/
+out/
+build/
+dist/
+
+# 缓存文件
+.turbo/
+.vercel/
+.wrangler/
+
+# 环境变量 - 这些是机密，别tm发出去
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
+
+# 日志文件
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 编辑器配置 - 每个人自己搞自己的
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+
+# 临时文件
+*.tmp
+*.temp
+
+# Python 相关（如果后端用了Python）
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# Cloudflare 相关
+.wrangler/
+.worker-next/
+
+# 其他
+*.log
+.cache/

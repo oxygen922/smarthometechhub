@@ -1,0 +1,16 @@
+# Cloudflare Workers 配置
+# 请修改 name 为你的项目名称
+name = "your-project-name"
+main = ".open-next/worker.js"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Assets 绑定 - 静态资源
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# 服务绑定 - 用于引用自身
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "your-project-name"
