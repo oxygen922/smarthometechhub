@@ -1,0 +1,16 @@
+# Robots.txt for LogicLoop
+# Allow all crawlers
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://logicloop.com/sitemap.xml
+
+# Crawl delay (optional, remove if not needed)
+Crawl-delay: 1
