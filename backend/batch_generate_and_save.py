@@ -13,6 +13,7 @@ import os
 import sys
 import json
 import requests
+import feedparser
 from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -101,6 +102,15 @@ class BatchArticleSaver:
         # 跟踪已使用的图片URL，避免重复
         self.used_images = set()
 
+        # RSS源配置（备选文章来源）
+        self.rss_sources = [
+            'https://www.theverge.com/rss/index.xml',
+            'https://www.wired.com/feed/rss',
+            'https://techcrunch.com/feed/',
+            'https://www.cnet.com/rss/news/',
+            'https://www.engadget.com/rss.xml'
+        ]
+
     def generate_article_with_ai(self, category, keywords):
         """使用AI生成文章，并返回文章内容和图片搜索关键词"""
         try:
@@ -172,6 +182,112 @@ Generate the complete article now."""
                 title = line.replace('# ', '').strip()
                 return title
         return "Comprehensive Smart Home Product Review 2026"
+
+    def generate_article_from_rss(self, category, keywords):
+        """RSS采集 + AI改写（备选方案）"""
+        try:
+            print(f"  📰 尝试RSS采集模式...")
+
+            # 从RSS源采集文章
+            collected_articles = []
+            for rss_url in self.rss_sources[:3]:  # 只用前3个源，避免太慢
+                try:
+                    feed = feedparser.parse(rss_url)
+                    for entry in feed.entries[:2]:  # 每个源取2篇
+                        title = entry.get('title', '')
+                        summary = entry.get('summary', '')
+                        if title and summary:
+                            collected_articles.append({
+                                'title': title,
+                                'summary': summary,
+                                'link': entry.get('link', '')
+                            })
+                except Exception as e:
+                    print(f"    ✗ RSS源失败: {rss_url[:50]}...")
+
+            if not collected_articles:
+                print(f"    ✗ RSS采集无结果")
+                return None
+
+            # 选择最相关的一篇（简单匹配关键词）
+            import re
+            best_article = None
+            best_score = 0
+
+            for article in collected_articles:
+                score = 0
+                # 检查标题和摘要是否包含关键词
+                for keyword in keywords.split()[:3]:  # 只检查前3个词
+                    if keyword.lower() in article['title'].lower() or keyword.lower() in article['summary'].lower():
+                        score += 1
+
+                if score > best_score:
+                    best_score = score
+                    best_article = article
+
+            if not best_article:
+                best_article = collected_articles[0]  # fallback到第一篇
+
+            print(f"    ✓ 采集到文章: {best_article['title'][:60]}...")
+
+            # 用AI改写这篇文章
+            prompt = f"""You are a professional smart home technology reviewer. Rewrite the following article into an original, SEO-optimized product review.
+
+Category: {category['name']}
+Topic: {keywords}
+
+Original Article (for reference only - create ORIGINAL content):
+Title: {best_article['title']}
+Summary: {best_article['summary']}
+
+Requirements:
+1. Create a 1500-2000 word ORIGINAL in-depth review (do not copy the original)
+2. Use professional yet accessible English
+3. Include these sections:
+   - Introduction (150 words)
+   - Top 3 Product Recommendations with detailed reviews
+   - Key Features to Consider (with comparison table)
+   - Buying Guide (who should buy, budget considerations)
+   - Installation & Smart Home Integration
+   - Conclusion & Final Verdict
+4. Include a technical specifications table using Markdown
+5. Target US audience
+6. Use current 2026 pricing estimates
+7. Format in clean Markdown
+8. Make it SEO-friendly with natural keyword usage
+
+After the article, on a separate line, provide an optimal image search keyword for this article.
+
+Generate the complete article now."""
+
+            response = self.client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {'role': 'system', 'content': 'You are an expert smart home technology reviewer. Create ORIGINAL content based on reference material.'},
+                    {'role': 'user', 'content': prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4000
+            )
+
+            if response.choices:
+                content = response.choices[0].message.content
+
+                # 分离内容和图片关键词
+                image_keyword = keywords
+                if 'IMAGE_KEYWORD:' in content:
+                    parts = content.split('IMAGE_KEYWORD:')
+                    content = parts[0].strip()
+                    image_keyword = parts[1].strip() if len(parts) > 1 else keywords
+
+                print(f"    ✓ AI改写完成")
+                return {'content': content, 'image_keyword': image_keyword}
+            else:
+                return None
+
+        except Exception as e:
+            print(f"    ✗ RSS+AI改写失败: {str(e)}")
+            return None
 
     def find_unique_image(self, keywords, category_slug):
         """查找并上传图片到R2，返回R2 URL"""
@@ -353,13 +469,21 @@ Generate the complete article now."""
         for i in range(num_articles):
             print(f"\n📝 生成第 {i+1}/{num_articles} 篇文章...")
 
-            # AI生成内容和图片关键词
+            # 优先使用RSS采集+AI改写，失败则使用AI直接生成
             base_keywords = category['keywords'][i % len(category['keywords'])]
-            print(f"🤖 正在使用AI生成内容和图片关键词... (基础关键词: {base_keywords})")
-            ai_result = self.generate_article_with_ai(category, base_keywords)
+
+            # 方法1：RSS采集 + AI改写（优先）
+            print(f"📰 尝试RSS采集模式... (关键词: {base_keywords})")
+            ai_result = self.generate_article_from_rss(category, base_keywords)
+
+            # 方法2：AI直接生成（备选）
+            if not ai_result:
+                print(f"  ⚠️  RSS采集失败，使用AI直接生成模式...")
+                print(f"🤖 正在使用AI生成内容和图片关键词... (基础关键词: {base_keywords})")
+                ai_result = self.generate_article_with_ai(category, base_keywords)
 
             if not ai_result:
-                print("✗ AI生成失败，跳过")
+                print("✗ 所有方法都失败，跳过这篇文章")
                 continue
 
             content = ai_result['content']
@@ -405,10 +529,6 @@ Generate the complete article now."""
 
         print(f"\n✨ 分类 {category['name']} 完成！成功保存 {successful}/{num_articles} 篇文章")
 
-        # 每个分类完成后立即更新前端JSON
-        if successful > 0:
-            self.update_frontend_json()
-
         return successful
 
     def run_batch_generation(self, articles_per_category=2):
@@ -436,8 +556,13 @@ Generate the complete article now."""
         print(f"🎉 批量生成完成！")
         print(f"📊 成功保存: {total_successful}/{len(self.categories) * articles_per_category} 篇文章")
         print("=" * 70)
+
+        # 所有文章生成完成后，统一更新前端JSON
+        if total_successful > 0:
+            print("\n🔄 正在更新前端JSON数据...")
+            self.update_frontend_json()
+
         print(f"\n💡 提示：文章已保存到 {self.content_dir}")
-        print(f"💡 请手动运行API发布或更新前端数据")
         sys.stdout.flush()
 
 
