@@ -3,16 +3,21 @@
 """
 SmartHome TechHub - 批量文章生成并保存为文件
 不发布到API，直接保存为Markdown文件
+
+更新日志：
+- 2026-05-13: 修复每批次生成完文章后更新JSON文件
+- 2026-05-13: 添加实时进度显示
 """
 
 import os
 import sys
 import json
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# 设置Windows控制台UTF-8编码
+# 设置Windows控制台UTF-8编码（重要：防止中文乱码）
 if sys.platform == 'win32':
     import io
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_buffering=True)
@@ -46,7 +51,7 @@ class BatchArticleSaver:
             {
                 'slug': 'smart-toilets',
                 'name': 'Smart Toilets',
-                'keywords': ['smart toilet', 'bidet seat']
+                'keywords': ['smart toilet', 'bidet seat', 'intelligent bathroom', 'japanese toilet', 'smart bathroom fixtures', 'electronic toilet', 'automated toilet']
             },
             {
                 'slug': 'robot-vacuums',
@@ -56,7 +61,7 @@ class BatchArticleSaver:
             {
                 'slug': 'smart-lawn-mowers',
                 'name': 'Smart Lawn Mowers',
-                'keywords': ['robot lawn mower', 'automatic mower']
+                'keywords': ['robot lawn mower', 'automatic mower', 'smart grass cutter', 'lawn care robot', 'intelligent mower', 'robotic lawn care', 'auto grass mower']
             },
             {
                 'slug': 'smart-kitchen',
@@ -66,25 +71,38 @@ class BatchArticleSaver:
             {
                 'slug': 'air-quality',
                 'name': 'Air Quality',
-                'keywords': ['air purifier', 'smart air quality monitor']
+                'keywords': ['air purifier', 'smart air quality monitor', 'home air filtration', 'clean air system', 'air quality sensor', 'HEPA purifier', 'smart air cleaner']
             },
             {
                 'slug': 'home-security',
                 'name': 'Home Security',
-                'keywords': ['smart security camera', 'home alarm system']
+                'keywords': ['smart security camera', 'home alarm system', 'video doorbell', 'intelligent surveillance', 'smart home security', 'wireless security camera', 'home monitoring system']
             },
             {
                 'slug': 'smart-lighting',
                 'name': 'Smart Lighting',
-                'keywords': ['smart light bulb', 'intelligent lighting system']
+                'keywords': ['smart light bulb', 'intelligent lighting system', 'automated lights', 'smart home lighting', 'LED smart bulbs', 'color changing lights', 'wireless lighting control']
+            },
+            {
+                'slug': 'smart-kitchen',
+                'name': 'Smart Kitchen',
+                'keywords': ['smart kitchen appliances', 'intelligent oven', 'smart refrigerator', 'kitchen technology', 'smart cooking devices', 'automated kitchen', 'smart kitchen gadgets']
+            },
+            {
+                'slug': 'robot-vacuums',
+                'name': 'Robot Vacuums',
+                'keywords': ['robot vacuum cleaner', 'robot mop', 'automatic vacuum', 'smart cleaning robot', 'robotic floor cleaner', 'smart vacuum', 'auto cleaning robot']
             }
         ]
 
         # 内容目录
         self.content_dir = os.path.join(os.path.dirname(__file__), '..', 'content', 'articles')
 
+        # 跟踪已使用的图片URL，避免重复
+        self.used_images = set()
+
     def generate_article_with_ai(self, category, keywords):
-        """使用AI生成文章"""
+        """使用AI生成文章，并返回文章内容和图片搜索关键词"""
         try:
             prompt = f"""You are a professional smart home technology reviewer. Write a comprehensive, original product review article.
 
@@ -108,6 +126,9 @@ Requirements:
 7. Format in clean Markdown
 8. Make it SEO-friendly with natural keyword usage
 
+After the article, on a separate line, provide an optimal image search keyword for this article.
+Format: IMAGE_KEYWORD: [your suggested search phrase]
+
 Generate the complete article now."""
 
             response = self.client.chat.completions.create(
@@ -122,7 +143,19 @@ Generate the complete article now."""
 
             if response.choices:
                 content = response.choices[0].message.content
-                return content
+
+                # 提取图片关键词
+                image_keyword = None
+                if 'IMAGE_KEYWORD:' in content:
+                    parts = content.split('IMAGE_KEYWORD:')
+                    content = parts[0].strip()
+                    image_keyword = parts[1].strip() if len(parts) > 1 else None
+
+                # 如果AI没有生成关键词，使用默认关键词
+                if not image_keyword:
+                    image_keyword = keywords
+
+                return {'content': content, 'image_keyword': image_keyword}
             else:
                 return None
 
@@ -140,22 +173,95 @@ Generate the complete article now."""
                 return title
         return "Comprehensive Smart Home Product Review 2026"
 
-    def find_image(self, keywords, category_slug):
-        """查找图片URL"""
+    def find_unique_image(self, keywords, category_slug):
+        """查找并上传图片到R2，返回R2 URL"""
         try:
-            images = self.image_finder.search_unsplash_image(keywords)
-            if images:
-                best_image = max(images, key=lambda img: img.get('width', 0) * img.get('height', 0))
-                image_url = best_image['urls']['regular']
-                photographer = best_image['user']['name']
-                print(f"✓ 找到图片 (摄影师: {photographer})")
-                return image_url
-            else:
-                print(f"⚠️  使用备用图片源")
+            print(f"  🔍 搜索图片: {keywords}")
+
+            # 从所有配置的来源搜索图片
+            images = self.image_finder.search_all_sources(keywords, per_page=20)
+
+            if not images or len(images) == 0:
+                print(f"  ⚠️  使用备用图片源")
                 return f"https://source.unsplash.com/1200x630/?{keywords.replace(' ', ',')}"
+
+            # 按分辨率排序（高分辨率优先）
+            sorted_images = sorted(images, key=lambda img: img.get('width', 0) * img.get('height', 0), reverse=True)
+
+            # 查找未使用的图片
+            for img in sorted_images:
+                source_url = img['urls']['regular']
+
+                # 检查是否已使用（基于原始URL）
+                if source_url not in self.used_images:
+                    # 下载并上传到R2
+                    print(f"  ⬇️  下载并上传到R2...")
+                    r2_url = self.upload_to_r2_from_url(source_url, keywords, category_slug)
+
+                    if r2_url:
+                        # 标记原始URL为已使用
+                        self.used_images.add(source_url)
+                        photographer = img['user']['name']
+                        source = img.get('source', 'unknown')
+                        print(f"  ✓ 上传成功 (来源: {source}, 摄影师: {photographer}, 已使用: {len(self.used_images)}张)")
+                        return r2_url
+                    else:
+                        print(f"  ⚠️  R2上传失败，尝试下一张")
+
+            # 如果所有图片都上传失败，使用第一张的原始URL（fallback）
+            best_image = sorted_images[0]
+            image_url = best_image['urls']['regular']
+            photographer = best_image['user']['name']
+            print(f"  ⚠️  R2上传全部失败，使用原始URL (摄影师: {photographer})")
+            return image_url
+
         except Exception as e:
-            print(f"⚠️  图片获取失败: {str(e)}")
+            print(f"  ⚠️  图片获取失败: {str(e)}")
             return f"https://source.unsplash.com/1200x630/?{keywords.replace(' ', ',')}"
+
+    def upload_to_r2_from_url(self, image_url, keywords, category_slug):
+        """从URL下载图片并上传到R2"""
+        try:
+            import tempfile
+            import requests
+
+            # 下载图片
+            response = requests.get(image_url, timeout=30, stream=True)
+            if response.status_code != 200:
+                print(f"    ✗ 下载失败: HTTP {response.status_code}")
+                return None
+
+            # 生成唯一文件名
+            import hashlib
+            from datetime import datetime
+            content_hash = hashlib.md5(
+                f"{keywords}_{category_slug}_{datetime.now().timestamp()}".encode()
+            ).hexdigest()[:12]
+            filename = f"{category_slug}_{content_hash}.jpg"
+            r2_key = f"articles/{category_slug}/{filename}"
+
+            # 保存到临时文件
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    temp_file.write(chunk)
+                temp_path = temp_file.name
+
+            # 上传到R2
+            print(f"    ☁️  上传到R2: {r2_key}")
+            r2_url = self.image_finder.upload_to_r2(temp_path, r2_key)
+
+            # 清理临时文件
+            try:
+                import os
+                os.remove(temp_path)
+            except:
+                pass
+
+            return r2_url
+
+        except Exception as e:
+            print(f"    ✗ 上传流程失败: {str(e)}")
+            return None
 
     def save_article_to_file(self, metadata, content):
         """保存文章为Markdown文件"""
@@ -223,16 +329,20 @@ Generate the complete article now."""
         for i in range(num_articles):
             print(f"\n📝 生成第 {i+1}/{num_articles} 篇文章...")
 
-            # AI生成内容
-            keywords = category['keywords'][i % len(category['keywords'])]
-            print(f"🤖 正在使用AI生成内容... (关键词: {keywords})")
-            content = self.generate_article_with_ai(category, keywords)
+            # AI生成内容和图片关键词
+            base_keywords = category['keywords'][i % len(category['keywords'])]
+            print(f"🤖 正在使用AI生成内容和图片关键词... (基础关键词: {base_keywords})")
+            ai_result = self.generate_article_with_ai(category, base_keywords)
 
-            if not content:
+            if not ai_result:
                 print("✗ AI生成失败，跳过")
                 continue
 
+            content = ai_result['content']
+            image_search_keyword = ai_result['image_keyword']
+
             print("✓ AI内容生成完成")
+            print(f"✓ AI生成的图片关键词: {image_search_keyword}")
 
             # 提取标题
             title = self.extract_title_from_content(content)
@@ -259,9 +369,9 @@ Generate the complete article now."""
                 'price': '$999'
             }
 
-            # 查找图片
-            print(f"🖼️  正在搜索图片...")
-            image_url = self.find_image(keywords, category['slug'])
+            # 查找唯一图片（使用AI生成的关键词）
+            print(f"🖼️  正在搜索唯一图片... (关键词: {image_search_keyword})")
+            image_url = self.find_unique_image(image_search_keyword, category['slug'])
             metadata['featuredImage'] = image_url
 
             # 保存文件

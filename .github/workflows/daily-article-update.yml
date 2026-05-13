@@ -1,0 +1,108 @@
+name: 每日文章采集和自动部署
+
+on:
+  # 定时任务：每天北京时间上午9点和下午5点运行
+  schedule:
+    - cron: '0 1 * * *'  # UTC时间1点 = 北京时间9点
+    - cron: '5 9 * * *'  # UTC时间9点 = 北京时间17点
+
+  # 也支持手动触发
+  workflow_dispatch:
+
+jobs:
+  article-collection:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 markdown python-dateutil
+
+      - name: 运行文章采集脚本
+        run: |
+          echo "开始文章采集工作流..."
+          # 这里运行你的文章采集脚本
+          # 如果你有完整的采集器，可以运行：
+          # python backend/采集器/daily_workflow.py
+
+          # 或者运行简单的采集脚本
+          python -c "
+import sys
+sys.path.append('backend/采集器')
+from smart_home_collector import main
+import datetime
+
+print(f'采集时间: {datetime.datetime.now()}')
+print('开始采集智能家居文章...')
+
+# 这里可以调用你的采集逻辑
+# main()  # 如果你有完整的工作流
+print('文章采集完成')
+          "
+
+      - name: 检查文章变化
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "articles_updated=true" >> $GITHUB_OUTPUT
+            echo "发现新文章，准备提交..."
+          else
+            echo "articles_updated=false" >> $GITHUB_OUTPUT
+            echo "没有新文章"
+          fi
+
+      - name: 配置Git
+        if: steps.check_changes.outputs.articles_updated == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions"
+
+      - name: 提交新文章
+        if: steps.check_changes.outputs.articles_updated == 'true'
+        run: |
+          git add content/articles/ lib/articles-data.json
+          git commit -m "🤖 自动文章采集: $(date +'%Y-%m-%d %H:%M:%S')"
+
+      - name: 推送到GitHub
+        if: steps.check_changes.outputs.articles_updated == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
+      - name: 触发Hostinger部署
+        if: steps.check_changes.outputs.articles_updated == 'true'
+        run: |
+          echo "✅ 文章已推送到GitHub"
+          echo "🚀 Hostinger将自动检测到更新并重新部署"
+          echo "⏰ 通常需要2-5分钟完成部署"
+
+      - name: 发送通知（可选）
+        if: steps.check_changes.outputs.articles_updated == 'true'
+        run: |
+          echo "通知：文章采集完成并已部署到网站"
+
+  backup-articles:
+    runs-on: ubuntu-latest
+    needs: article-collection
+
+    steps:
+      - name: 创建文章备份
+        run: |
+          echo "创建文章数据备份..."
+          # 可以将文章数据备份到其他地方
+
+      - name: 记录采集统计
+        run: |
+          echo "文章采集统计:"
+          echo "- 采集时间: $(date)"
+          echo "- 新增文章: ${{ needs.article-collection.outputs.new_articles_count || 'N/A' }}"

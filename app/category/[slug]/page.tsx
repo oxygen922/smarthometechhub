@@ -40,7 +40,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     notFound();
   }
 
-  const articles = await getArticlesByCategory(category.name);
+  const articles = await getArticlesByCategory(category.slug);
 
   return (
     <div className="min-h-screen bg-brand-bg py-12">

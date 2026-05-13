@@ -18,11 +18,14 @@ load_dotenv()
 
 
 class SmartImageFinder:
-    """智能图片查找器和R2上传器"""
+    """智能图片查找器和R2上传器 - 支持多图片源"""
 
     def __init__(self):
         """初始化配置"""
         self.unsplash_access_key = os.getenv('UNSPLASH_ACCESS_KEY')
+        self.pexels_api_key = os.getenv('PEXELS_API_KEY')
+        self.pixabay_api_key = os.getenv('PIXABAY_API_KEY')
+
         self.r2_account_id = os.getenv('R2_ACCOUNT_ID')
         self.r2_access_key_id = os.getenv('R2_ACCESS_KEY_ID')
         self.r2_secret_access_key = os.getenv('R2_SECRET_ACCESS_KEY')
@@ -30,22 +33,38 @@ class SmartImageFinder:
         self.r2_public_url = os.getenv('R2_PUBLIC_URL')
 
         # 初始化R2 S3客户端
-        self.s3_client = boto3.client(
-            's3',
-            endpoint_url=f'https://{self.r2_account_id}.r2.cloudflarestorage.com',
-            aws_access_key_id=self.r2_access_key_id,
-            aws_secret_access_key=self.r2_secret_access_key,
-            region_name='auto'
-        )
+        if self.r2_access_key_id and self.r2_secret_access_key:
+            self.s3_client = boto3.client(
+                's3',
+                endpoint_url=f'https://{self.r2_account_id}.r2.cloudflarestorage.com',
+                aws_access_key_id=self.r2_access_key_id,
+                aws_secret_access_key=self.r2_secret_access_key,
+                region_name='auto'
+            )
+        else:
+            self.s3_client = None
 
         # 验证配置
-        if not self.unsplash_access_key:
-            raise ValueError("UNSPLASH_ACCESS_KEY not configured")
+        sources = []
+        if self.unsplash_access_key:
+            sources.append('Unsplash')
+        if self.pexels_api_key:
+            sources.append('Pexels')
+        if self.pixabay_api_key:
+            sources.append('Pixabay')
+
+        if not sources:
+            raise ValueError("至少需要配置一个图片API密钥 (UNSPLASH_ACCESS_KEY, PEXELS_API_KEY, 或 PIXABAY_API_KEY)")
+
+        print(f"✓ 图片源: {', '.join(sources)}")
         if not self.r2_bucket_name:
-            raise ValueError("R2_BUCKET_NAME not configured")
+            print("⚠️  未配置R2，将使用图片URL而非上传")
 
     def search_unsplash_image(self, keywords, per_page=10):
         """从Unsplash搜索图片"""
+        if not self.unsplash_access_key:
+            return []
+
         try:
             url = "https://api.unsplash.com/search/photos"
             params = {
@@ -63,17 +82,125 @@ class SmartImageFinder:
             if response.status_code == 200:
                 data = response.json()
                 if data.get('results'):
-                    return data['results']
-                else:
-                    print(f"⚠️  Unsplash未找到关键词 '{keywords}' 的图片")
-                    return None
+                    # 格式化为统一格式
+                    return [{
+                        'urls': {'regular': img['urls']['regular']},
+                        'width': img.get('width', 0),
+                        'height': img.get('height', 0),
+                        'user': {'name': img['user'].get('name', 'Unknown')},
+                        'source': 'unsplash'
+                    } for img in data['results']]
             else:
-                print(f"✗ Unsplash API错误: {response.status_code} - {response.text}")
-                return None
+                print(f"✗ Unsplash API错误: {response.status_code}")
 
         except Exception as e:
             print(f"✗ Unsplash搜索失败: {str(e)}")
-            return None
+
+        return []
+
+    def search_pexels_image(self, keywords, per_page=10):
+        """从Pexels搜索图片"""
+        if not self.pexels_api_key:
+            return []
+
+        try:
+            url = "https://api.pexels.com/v1/search"
+            params = {
+                'query': keywords,
+                'per_page': per_page,
+                'orientation': 'landscape'
+            }
+            headers = {
+                'Authorization': self.pexels_api_key
+            }
+
+            response = requests.get(url, params=params, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('photos'):
+                    # 格式化为统一格式
+                    return [{
+                        'urls': {'regular': photo['src']['large']},
+                        'width': photo.get('width', 0),
+                        'height': photo.get('height', 0),
+                        'user': {'name': photo.get('photographer', 'Unknown')},
+                        'source': 'pexels'
+                    } for photo in data['photos']]
+            else:
+                print(f"✗ Pexels API错误: {response.status_code}")
+
+        except Exception as e:
+            print(f"✗ Pexels搜索失败: {str(e)}")
+
+        return []
+
+    def search_pixabay_image(self, keywords, per_page=10):
+        """从Pixabay搜索图片"""
+        if not self.pixabay_api_key:
+            return []
+
+        try:
+            url = "https://pixabay.com/api/"
+            params = {
+                'key': self.pixabay_api_key,
+                'q': keywords,
+                'per_page': per_page,
+                'image_type': 'photo',
+                'orientation': 'horizontal',
+                'safesearch': 'true'
+            }
+
+            response = requests.get(url, params=params, timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('hits'):
+                    # 格式化为统一格式
+                    return [{
+                        'urls': {'regular': hit['webformatURL']},
+                        'width': hit.get('imageWidth', 0),
+                        'height': hit.get('imageHeight', 0),
+                        'user': {'name': hit.get('user', 'Unknown')},
+                        'source': 'pixabay'
+                    } for hit in data['hits']]
+            else:
+                print(f"✗ Pixabay API错误: {response.status_code}")
+
+        except Exception as e:
+            print(f"✗ Pixabay搜索失败: {str(e)}")
+
+        return []
+
+    def search_all_sources(self, keywords, per_page=10):
+        """从所有配置的来源搜索图片"""
+        all_images = []
+
+        print(f"  📸 搜索所有图片源...")
+
+        # 从Unsplash搜索
+        if self.unsplash_access_key:
+            print(f"    Unsplash... ", end='', flush=True)
+            unsplash_images = self.search_unsplash_image(keywords, per_page)
+            all_images.extend(unsplash_images or [])
+            print(f"✓ {len(unsplash_images or [])}张")
+
+        # 从Pexels搜索
+        if self.pexels_api_key:
+            print(f"    Pexels... ", end='', flush=True)
+            pexels_images = self.search_pexels_image(keywords, per_page)
+            all_images.extend(pexels_images or [])
+            print(f"✓ {len(pexels_images or [])}张")
+
+        # 从Pixabay搜索
+        if self.pixabay_api_key:
+            print(f"    Pixabay... ", end='', flush=True)
+            pixabay_images = self.search_pixabay_image(keywords, per_page)
+            all_images.extend(pixabay_images or [])
+            print(f"✓ {len(pixabay_images or [])}张")
+
+        print(f"  📊 总共找到 {len(all_images)} 张图片")
+        return all_images if all_images else None
 
     def download_image(self, image_url, local_path):
         """下载图片到本地"""

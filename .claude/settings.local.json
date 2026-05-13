@@ -40,7 +40,11 @@
       "Bash(tee generation.log)",
       "Bash(tee -a generation.log)",
       "Bash(node *)",
-      "Bash(git add *)"
+      "Bash(python -c ' *)",
+      "Bash(python fix_duplicate_images.py)",
+      "Bash(python test_r2_upload.py)",
+      "Bash(pkill *)",
+      "Bash(python batch_generate_and_save.py 1)"
     ]
   }
 }
