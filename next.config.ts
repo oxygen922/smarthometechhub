@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
-      // 任何其他你需要的图片域名
+      // AWS S3
       {
         protocol: 'https',
         hostname: '**.amazonaws.com',
