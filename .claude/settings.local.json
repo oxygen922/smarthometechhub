@@ -44,7 +44,22 @@
       "Bash(python fix_duplicate_images.py)",
       "Bash(python test_r2_upload.py)",
       "Bash(pkill *)",
-      "Bash(python batch_generate_and_save.py 1)"
+      "Bash(python batch_generate_and_save.py 1)",
+      "Bash(gh repo *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'fix: 删除旧的YAML语法错误的工作流文件 *)",
+      "Bash(git push *)",
+      "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/daily-article-generation.yml'\\)\\)\")",
+      "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/daily-article-generation.yml', encoding='utf-8'\\)\\)\")",
+      "Bash(npx tsc)",
+      "Bash(git commit -m 'fix: 修复GitHub Actions YAML语法错误 *)",
+      "Bash(git commit -m 'fix: 修复YAML多行字符串语法错误 *)",
+      "Bash(ping *)",
+      "Bash(pip show *)",
+      "Bash(python -c \"import yaml; y=yaml.safe_load\\(open\\('.github/workflows/daily-article-generation.yml', encoding='utf-8'\\)\\); print\\('  ✅ YAML语法正确'\\); print\\(f'  Jobs: {list\\(y[\\\\\"jobs\\\\\"].keys\\(\\)\\)}'\\); perms=y['jobs']['generate-articles'].get\\('permissions', {}\\); print\\(f'  Permissions: {perms}'\\); print\\(f'  ⚠️ 权限问题: {\\\\\"contents\\\\\" not in perms or perms.get\\(\\\\\"contents\\\\\"\\) != \\\\\"write\\\\\"}'\\)\")",
+      "Bash(grep \"\\\\.env$\")",
+      "Bash(git commit -m 'fix: 修复GitHub Actions的所有问题 *)",
+      "Bash(git commit -m 'fix: 修复GitHub Actions中前端数据更新错误 *)"
     ]
   }
 }

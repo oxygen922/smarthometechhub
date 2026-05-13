@@ -44,6 +44,16 @@ class BatchArticleSaver:
         # 初始化DeepSeek客户端
         self.client = OpenAI(api_key=self.api_key, base_url=self.api_base)
 
+        # 初始化XAI客户端（如果配置了）
+        self.xai_api_key = os.getenv('XAI_API_KEY')
+        if self.xai_api_key:
+            self.xai_client = OpenAI(
+                api_key=self.xai_api_key,
+                base_url='https://api.x.ai/v1'
+            )
+        else:
+            self.xai_client = None
+
         # 初始化图片查找器
         self.image_finder = SmartImageFinder()
 
@@ -182,6 +192,76 @@ Generate the complete article now."""
                 title = line.replace('# ', '').strip()
                 return title
         return "Comprehensive Smart Home Product Review 2026"
+
+    def generate_article_with_xai_search(self, category, keywords):
+        """使用XAI Web Search搜索素材 + AI生成文章"""
+        if not self.xai_client:
+            print(f"    ✗ XAI未配置")
+            return None
+
+        try:
+            print(f"  🔍 使用XAI搜索实时素材...")
+
+            # 使用XAI的web search功能
+            search_query = f"{category['name']} {keywords} 2026 reviews comparison best products"
+            print(f"    搜索查询: {search_query}")
+
+            prompt = f"""Search the web for the latest information about {search_query} and write a comprehensive, original product review article.
+
+Category: {category['name']}
+Topic: {keywords}
+Year: 2026
+
+Requirements:
+1. Use web search to find the latest product information, reviews, and comparisons
+2. Create a 1500-2000 word in-depth review based on search results
+3. Use professional yet accessible English
+4. Include these sections:
+   - Introduction (150 words)
+   - Top 3 Product Recommendations with detailed reviews
+   - Key Features to Consider (with comparison table)
+   - Buying Guide (who should buy, budget considerations)
+   - Installation & Smart Home Integration
+   - Conclusion & Final Verdict
+5. Include a technical specifications table using Markdown
+6. Target US audience
+7. Use current 2026 pricing estimates
+8. Format in clean Markdown
+9. Make it SEO-friendly with natural keyword usage
+10. Cite recent sources from your web search
+
+After the article, on a separate line, provide an optimal image search keyword for this article.
+
+Generate the complete article now."""
+
+            response = self.xai_client.chat.completions.create(
+                model="grok-beta",
+                messages=[
+                    {'role': 'system', 'content': 'You are an expert smart home technology reviewer with web search capabilities. Create original, well-researched content.'},
+                    {'role': 'user', 'content': prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4000
+            )
+
+            if response.choices:
+                content = response.choices[0].message.content
+
+                # 分离内容和图片关键词
+                image_keyword = keywords
+                if 'IMAGE_KEYWORD:' in content:
+                    parts = content.split('IMAGE_KEYWORD:')
+                    content = parts[0].strip()
+                    image_keyword = parts[1].strip() if len(parts) > 1 else keywords
+
+                print(f"    ✓ XAI搜索+生成完成")
+                return {'content': content, 'image_keyword': image_keyword}
+            else:
+                return None
+
+        except Exception as e:
+            print(f"    ✗ XAI搜索失败: {str(e)}")
+            return None
 
     def generate_article_from_rss(self, category, keywords):
         """RSS采集 + AI改写（备选方案）"""
@@ -469,16 +549,21 @@ Generate the complete article now."""
         for i in range(num_articles):
             print(f"\n📝 生成第 {i+1}/{num_articles} 篇文章...")
 
-            # 优先使用RSS采集+AI改写，失败则使用AI直接生成
+            # 多层次文章生成策略
             base_keywords = category['keywords'][i % len(category['keywords'])]
 
-            # 方法1：RSS采集 + AI改写（优先）
+            # 方法1：RSS采集 + AI改写（优先，最快）
             print(f"📰 尝试RSS采集模式... (关键词: {base_keywords})")
             ai_result = self.generate_article_from_rss(category, base_keywords)
 
-            # 方法2：AI直接生成（备选）
+            # 方法2：XAI Web Search + AI生成（实时素材）
+            if not ai_result and self.xai_client:
+                print(f"  ⚠️  RSS采集失败，使用XAI搜索模式...")
+                ai_result = self.generate_article_with_xai_search(category, base_keywords)
+
+            # 方法3：AI直接生成（最终备选）
             if not ai_result:
-                print(f"  ⚠️  RSS采集失败，使用AI直接生成模式...")
+                print(f"  ⚠️  XAI搜索失败，使用AI直接生成模式...")
                 print(f"🤖 正在使用AI生成内容和图片关键词... (基础关键词: {base_keywords})")
                 ai_result = self.generate_article_with_ai(category, base_keywords)
 
