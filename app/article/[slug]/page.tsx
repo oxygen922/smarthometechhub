@@ -5,17 +5,31 @@
 // 强制静态输出
 export const dynamic = 'force-static';
 
+// 未预渲染的 slug 在首次请求时按需生成静态页并缓存（ISR），避免构建期全量预渲染
+export const dynamicParams = true;
+
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getArticleBySlug, getAllArticles } from '@/lib/content';
 import { siteConfig } from '@/config/site.config';
 import { ArticleContent } from '@/components/ArticleContent';
 
+// 构建期仅预渲染最新 N 篇（ARTICLE_PRERENDER_LIMIT，默认 100；设为 0 表示全部按需生成）
+const PRERENDER_LIMIT = Number.parseInt(
+  process.env.ARTICLE_PRERENDER_LIMIT ?? '100',
+  10
+);
+
 export async function generateStaticParams() {
+  if (!Number.isFinite(PRERENDER_LIMIT) || PRERENDER_LIMIT <= 0) {
+    return [];
+  }
   const articles = await getAllArticles();
-  return articles.map((article) => ({
-    slug: article.slug,
-  }));
+  return articles
+    .slice(0, PRERENDER_LIMIT)
+    .map((article) => ({
+      slug: article.slug,
+    }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {

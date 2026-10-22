@@ -1,9 +1,12 @@
 /**
  * 文章内容工具函数
- * 从预生成的 JSON 读取文章数据，不依赖 fs 运行时
+ * 运行时通过 fs 读取预生成的 JSON，避免 38MB 数据被内联进每个路由的 server bundle
+ * 每个进程只读取并解析一次，后续全部走内存缓存
  */
 
-import articlesData from './articles-data.json';
+import { readFile } from 'fs/promises';
+import path from 'path';
+import { Article as OldArticle } from '@/types/article';
 
 export interface Article {
   slug: string;
@@ -17,30 +20,69 @@ export interface Article {
   content: string;
 }
 
+const DATA_FILE = path.join(process.cwd(), 'lib', 'articles-data.json');
+
+let dataPromise: Promise<Article[]> | null = null;
+
+function loadArticles(): Promise<Article[]> {
+  // 生产环境（含 next build / next start）进程内只读一次
+  if (process.env.NODE_ENV === 'production' && dataPromise) {
+    return dataPromise;
+  }
+
+  const read = readFile(DATA_FILE, 'utf-8')
+    .then((raw) => JSON.parse(raw) as Article[])
+    .catch((error) => {
+      console.error('Failed to load articles-data.json:', error);
+      return [] as Article[];
+    });
+
+  if (process.env.NODE_ENV === 'production') {
+    dataPromise = read;
+  }
+  return read;
+}
+
+let sortedArticles: Article[] | null = null;
+let slugIndex: Map<string, Article> | null = null;
+
 /**
  * 获取所有文章（按日期倒序排列，最新的在前面）
  */
 export async function getAllArticles(): Promise<Article[]> {
-  const articles = articlesData as Article[];
-  // 按日期倒序排列，最新的文章在前面
-  return articles.sort((a, b) => 
-    new Date(b.date).getTime() - new Date(a.date).getTime()
+  if (process.env.NODE_ENV === 'production' && sortedArticles) {
+    return sortedArticles;
+  }
+  const articles = await loadArticles();
+  const sorted = [...articles].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+  if (process.env.NODE_ENV === 'production') {
+    sortedArticles = sorted;
+  }
+  return sorted;
 }
 
 /**
- * 根据 slug 获取单篇文章
+ * 根据 slug 获取单篇文章（Map 索引，O(1)）
  */
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
-  const article = (articlesData as Article[]).find(a => a.slug === slug);
-  return article || null;
+  let index = slugIndex;
+  if (!index) {
+    const articles = await loadArticles();
+    index = new Map(articles.map((article) => [article.slug, article]));
+    if (process.env.NODE_ENV === 'production') {
+      slugIndex = index;
+    }
+  }
+  return index.get(slug) || null;
 }
 
 /**
- * 根据分类获取文章
+ * 根据分类获取文章（按日期倒序）
  */
 export async function getArticlesByCategory(category: string): Promise<Article[]> {
-  const allArticles = articlesData as Article[];
+  const allArticles = await getAllArticles();
   const categoryLower = category.toLowerCase();
   return allArticles.filter(article =>
     article.category.toLowerCase() === categoryLower
@@ -51,13 +93,10 @@ export async function getArticlesByCategory(category: string): Promise<Article[]
  * 获取所有分类
  */
 export async function getCategories(): Promise<string[]> {
-  const allArticles = articlesData as Article[];
+  const allArticles = await loadArticles();
   const categories = new Set(allArticles.map(article => article.category));
   return Array.from(categories);
 }
-
-// 保持向后兼容
-import { Article as OldArticle } from '@/types/article';
 
 /**
  * 获取所有文章（旧接口兼容）

@@ -37,6 +37,15 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
 
+  // articles-data.json 改为运行时 fs 读取后，需显式声明进文件 tracing，
+  // 保证 standalone / serverless 部署时数据文件随产物分发
+  outputFileTracingIncludes: {
+    '/': ['./lib/articles-data.json'],
+    '/article/**': ['./lib/articles-data.json'],
+    '/category/**': ['./lib/articles-data.json'],
+    '/sitemap.xml': ['./lib/articles-data.json'],
+  },
+
   // 压缩和优化
   compress: true,
   productionBrowserSourceMaps: false,
