@@ -2,19 +2,9 @@ name: Daily Article Generation
 
 on:
   schedule:
-    # 每天 UTC 0:00 运行（北京时间 8:00 AM）
+    # 每天 UTC 0:00 运行（北京时间 8:00 AM），生成 1 篇文章
     - cron: '0 0 * * *'
   workflow_dispatch:  # 允许手动触发
-    inputs:
-      articles_per_category:
-        description: '每个分类生成的文章数'
-        required: false
-        default: '5'
-        type: choice
-        options:
-          - '1'
-          - '3'
-          - '5'
 
 jobs:
   generate-articles:
@@ -56,20 +46,6 @@ jobs:
           echo "ARTICLE_COUNT=$ARTICLE_COUNT" >> $GITHUB_ENV
           echo "📊 当前文章数: $ARTICLE_COUNT"
 
-      - name: Determine articles per category
-        id: determine-count
-        run: |
-          ARTICLE_COUNT="${{ env.ARTICLE_COUNT }}"
-          DEFAULT="${{ github.event.inputs.articles_per_category || '5' }}"
-
-          if [ "$ARTICLE_COUNT" -ge 1000 ]; then
-            echo "📉 文章数已达标，降低频率为每天每个分类1篇"
-            echo "ARTICLES_PER_CATEGORY=1" >> $GITHUB_ENV
-          else
-            echo "📈 文章数未达标，继续高频生成（每个分类${DEFAULT}篇）"
-            echo "ARTICLES_PER_CATEGORY=$DEFAULT" >> $GITHUB_ENV
-          fi
-
       - name: Generate articles
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -82,10 +58,10 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
-          ARTICLES_PER_CATEGORY: ${{ env.ARTICLES_PER_CATEGORY }}
+          ARTICLES_PER_DAY: "1"
         run: |
           echo "🚀 开始生成文章..."
-          echo "📝 每个分类生成 ${{ env.ARTICLES_PER_CATEGORY }} 篇文章"
+          echo "📝 今日限量生成 1 篇（分类按日期轮换）"
 
           cd backend
 
@@ -130,13 +106,6 @@ jobs:
           echo "=================================="
           echo "生成前: $OLD_COUNT 篇文章"
           echo "生成后: $NEW_COUNT 篇文章"
-          echo "新增: $((NEW_COUNT - OLD_COUNT)) 篇文章"
+          echo "新增: $((NEW_COUNT - OLD_COUNT)) 篇文章（策略: 每天 1 篇，分类轮换）"
           echo "=================================="
-
-          if [ "$NEW_COUNT" -ge 1000 ]; then
-            echo "🎉 已达到1000篇目标！"
-            echo "📉 从明天起降低生成频率为每天每个分类1篇"
-          else
-            echo "📈 继续积累内容，距离1000篇还有 $((1000 - NEW_COUNT)) 篇"
-          fi
-# Auto-generated workflow file
+# 每日生成策略：ARTICLES_PER_DAY=1，脚本按一年中的第几天在 7 个分类中轮换

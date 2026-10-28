@@ -646,21 +646,25 @@ Generate the complete article now."""
 
         return successful
 
-    def run_batch_generation(self, articles_per_category=2):
+    def run_batch_generation(self, articles_per_category=2, categories=None):
         """运行批量生成流程"""
         sys.stdout.flush()
+
+        # 未指定分类时使用全部分类（注意列表中存在重复项）
+        if categories is None:
+            categories = self.categories
 
         print("=" * 70)
         print("🚀 SmartHome TechHub 批量文章生成系统")
         print("=" * 70)
-        print(f"📊 计划生成: {len(self.categories)} 个分类 × {articles_per_category} 篇")
+        print(f"📊 计划生成: {len(categories)} 个分类 × {articles_per_category} 篇")
         print("=" * 70)
         sys.stdout.flush()
 
         total_successful = 0
 
-        for idx, category in enumerate(self.categories):
-            print(f"\n进度: {idx + 1}/{len(self.categories)}")
+        for idx, category in enumerate(categories):
+            print(f"\n进度: {idx + 1}/{len(categories)}")
             sys.stdout.flush()
 
             successful = self.generate_for_category(category, articles_per_category)
@@ -669,7 +673,7 @@ Generate the complete article now."""
         # 总结
         print("\n" + "=" * 70)
         print(f"🎉 批量生成完成！")
-        print(f"📊 成功保存: {total_successful}/{len(self.categories) * articles_per_category} 篇文章")
+        print(f"📊 成功保存: {total_successful}/{len(categories) * articles_per_category} 篇文章")
         print("=" * 70)
 
         # 所有文章生成完成后，统一更新前端JSON
@@ -685,7 +689,34 @@ def main():
     """主函数"""
     try:
         generator = BatchArticleSaver()
-        generator.run_batch_generation(articles_per_category=2)
+
+        # ARTICLES_PER_DAY: 每日生成文章总数（>0 时启用限量模式，按日期轮换分类保持均衡）
+        articles_per_day = int(os.getenv('ARTICLES_PER_DAY', '0') or 0)
+
+        if articles_per_day > 0:
+            # 去重后的分类列表（self.categories 中 robot-vacuums / smart-kitchen 存在重复）
+            unique_categories = []
+            seen = set()
+            for category in generator.categories:
+                if category['slug'] not in seen:
+                    seen.add(category['slug'])
+                    unique_categories.append(category)
+
+            # 以一年中的第几天为起点轮换，每天生成 1 篇、每天换一个分类
+            day_of_year = datetime.now().timetuple().tm_yday
+            selected = [
+                unique_categories[(day_of_year + i) % len(unique_categories)]
+                for i in range(articles_per_day)
+            ]
+            selected_names = ', '.join(c['slug'] for c in selected)
+            print(f"📅 限量模式: 今日生成 {articles_per_day} 篇，分类轮换 → {selected_names}")
+            sys.stdout.flush()
+
+            generator.run_batch_generation(articles_per_category=1, categories=selected)
+        else:
+            # 默认模式：每个分类条目生成 ARTICLES_PER_CATEGORY 篇（原行为）
+            per_category = int(os.getenv('ARTICLES_PER_CATEGORY', '2') or 2)
+            generator.run_batch_generation(articles_per_category=per_category)
 
     except KeyboardInterrupt:
         print("\n\n⚠️  生成过程被用户中断")
