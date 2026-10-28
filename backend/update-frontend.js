@@ -75,7 +75,8 @@ async function updateFrontendData() {
                 author: frontMatter.author || 'SmartHome TechHub',
                 featuredImage: frontMatter.featuredImage || '',
                 excerpt: frontMatter.excerpt || articleContent.substring(0, 150) + '...',
-                content: articleContent || ''
+                content: articleContent || '',
+                pinned: frontMatter.pinned === true
               };
 
               allArticles.push(article);
@@ -88,8 +89,13 @@ async function updateFrontendData() {
       }
     }
 
-    // 按日期排序（最新的在前面）
-    allArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 排序：置顶文章优先，其余按日期倒序（最新的在前面）
+    allArticles.sort((a, b) => {
+      const aPinned = a.pinned === true ? 1 : 0;
+      const bPinned = b.pinned === true ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+      return new Date(b.date) - new Date(a.date);
+    });
 
     // 写入前端数据文件
     await fs.writeFile(FRONTEND_DATA_FILE, JSON.stringify(allArticles, null, 2));

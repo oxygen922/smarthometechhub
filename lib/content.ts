@@ -18,6 +18,17 @@ export interface Article {
   featuredImage: string;
   excerpt: string;
   content: string;
+  pinned?: boolean;
+}
+
+/**
+ * 文章排序比较器：置顶文章（pinned: true）优先，其余按日期倒序
+ */
+function compareArticles(a: Article, b: Article): number {
+  const aPinned = a.pinned === true ? 1 : 0;
+  const bPinned = b.pinned === true ? 1 : 0;
+  if (aPinned !== bPinned) return bPinned - aPinned;
+  return new Date(b.date).getTime() - new Date(a.date).getTime();
 }
 
 const DATA_FILE = path.join(process.cwd(), 'lib', 'articles-data.json');
@@ -54,9 +65,7 @@ export async function getAllArticles(): Promise<Article[]> {
     return sortedArticles;
   }
   const articles = await loadArticles();
-  const sorted = [...articles].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const sorted = [...articles].sort(compareArticles);
   if (process.env.NODE_ENV === 'production') {
     sortedArticles = sorted;
   }

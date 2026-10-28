@@ -26,6 +26,16 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**.amazonaws.com',
       },
+      // Shopify CDN（置顶封面文章产品图）
+      {
+        protocol: 'https',
+        hostname: 'cdn.shopify.com',
+      },
+      // Amazon 图片 CDN
+      {
+        protocol: 'https',
+        hostname: 'm.media-amazon.com',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

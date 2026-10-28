@@ -16,6 +16,7 @@ export interface Article {
   featuredImage: string;
   excerpt: string;
   content: string;
+  pinned?: boolean;
 }
 
 // 首页配置
@@ -225,9 +226,13 @@ export function groupArticlesForHomepage(articles: Article[]) {
  * @param excludeSlugs 需要预先排除的文章 slug（如已被 Hero 横幅使用的文章）
  */
 export function getHomepageArticles(articles: Article[], excludeSlugs: string[] = []) {
-  const sortedArticles = [...articles].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  // 置顶文章优先，其余按日期倒序（与 getAllArticles 保持一致）
+  const sortedArticles = [...articles].sort((a, b) => {
+    const aPinned = a.pinned === true ? 1 : 0;
+    const bPinned = b.pinned === true ? 1 : 0;
+    if (aPinned !== bPinned) return bPinned - aPinned;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
 
   const usedSlugs = new Set<string>(excludeSlugs);
 
