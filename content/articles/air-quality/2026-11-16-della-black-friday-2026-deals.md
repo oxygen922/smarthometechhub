@@ -9,7 +9,7 @@ tags: ["air-quality", "black-friday", "2026", "della", "deals", "mini-split", "p
 rating: 4.9
 price: "From $219.96"
 pinned: true
-featuredImage: "https://cdn.shopify.com/s/files/1/0785/7763/1520/files/Blue_Logo.svg?v=1777500403&width=300"
+featuredImage: "https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/air-quality/della-black-friday-2026-deals/hero.jpg"
 ---
 
 # DELLA Black Friday 2026: Up to 20% Off Mini Splits, Portable ACs & More — Full Deal Roundup
@@ -49,6 +49,8 @@ Winners announced **November 24**. Details on the [Early Black Friday page](http
 
 ### 1. Dual-Zone Mini Splits — 11% Off + BF20 = ~30% Total Savings
 
+![DELLA Vario Series dual-zone mini split system with complete install kit](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/air-quality/della-black-friday-2026-deals/mini-split.jpg)
+
 These are the headline deals. Every dual-zone Vario Series unit is pre-marked down 11% already, and BF20 stacks on top. That's roughly 30% off MSRP.
 
 | Product | Capacity | Coverage | Pre-Sale Price | BF20 Final |
@@ -63,6 +65,8 @@ These are the headline deals. Every dual-zone Vario Series unit is pre-marked do
 All Vario Series mini splits ship with a complete install kit — copper line set, wire, condensate drain, and wall bracket. The 12K+12K split is DELLA's best-selling multi-zone and the one we'd recommend for most two-bedroom homes or a house with a separate kitchen and living room.
 
 ### 2. Portable Air Conditioners — 15% Off + BF20
+
+![DELLA Traverse smart WiFi portable air conditioner with app and remote control](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/air-quality/della-black-friday-2026-deals/portable-ac.jpg)
 
 Every portable in DELLA's catalog has a 15% line-item markdown right now. Stack BF20 on top for effective pricing that undercuts anything we saw on Amazon's Prime Big Deal Days.
 
@@ -79,6 +83,8 @@ Every portable in DELLA's catalog has a 15% line-item markdown right now. Stack 
 Our take: The **Traverse 14K at $232** is the budget pickup of the sale, and the **Sylro 14K inverter at $432** is the one we'd actually buy — it's still the quietest portable we've measured at this price point (38 dB low mode), and BF20 brings it well under our $500 threshold for "worth treating yourself."
 
 ### 3. Window Air Conditioners — Extra 10% with R10
+
+![DELLA Fenestra smart window air conditioner](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/air-quality/della-black-friday-2026-deals/window-ac.jpg)
 
 Several window units get an additional 10% off when you enter code R10 at checkout, independent of BF20.
 

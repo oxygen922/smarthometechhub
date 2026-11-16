@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev',
+      },
+      {
+        protocol: 'https',
         hostname: 'ceec996a81ee29acc1eb188b0a2017e4.r2.cloudflarestorage.com',
       },
       // Unsplash
