@@ -8,7 +8,7 @@ import { getAllArticles } from '@/lib/content';
 import { getHomepageArticles } from '@/lib/homepage';
 import { ArticleCard } from '@/components/ArticleCard';
 import { HeroGrid } from '@/components/HeroGrid';
-import { ImageScrollHero } from '@/components/ImageScrollHero';
+import { HeroCarousel } from '@/components/HeroCarousel';
 import { NewsletterSubscribe } from '@/components/NewsletterSubscribe';
 import Link from 'next/link';
 
@@ -24,26 +24,33 @@ export async function generateMetadata() {
 export default async function HomePage() {
   const articles = await getAllArticles();
 
-  const heroBannerSlug = articles.length > 0 ? [articles[0].slug] : [];
-  const homepageArticles = getHomepageArticles(articles, heroBannerSlug);
+  // Banner 轮播：置顶文章（按日期升序，最早的置顶文章优先展示），无置顶时回退到最新一篇
+  const pinned = articles.filter((a) => a.pinned === true);
+  const bannerArticles = (pinned.length > 0
+    ? [...pinned].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    : articles.slice(0, 1)
+  ).slice(0, 3);
+
+  const heroBannerSlugs = bannerArticles.map((a) => a.slug);
+  const homepageArticles = getHomepageArticles(articles, heroBannerSlugs);
 
   const hasProducts = homepageArticles.destinations.length > 0;
   const hasGuides = homepageArticles.guides.length > 0;
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      {/* 1. Hero Banner */}
-      <ImageScrollHero
-        title={articles.length > 0 ? articles[0].title : 'Smart Living, Simplified'}
-        subtitle="Intelligent Home Technology"
-        description={
-          articles.length > 0
-            ? articles[0].excerpt || 'Expert reviews and guides for smart home appliances. Discover the best intelligent toilets, robot vacuums, lawn mowers, and more.'
-            : 'Expert reviews and guides for smart home appliances. Discover the best intelligent toilets, robot vacuums, lawn mowers, and more.'
-        }
-        backgroundImage={articles.length > 0 ? articles[0].featuredImage : ''}
-        ctaText="Read Full Review"
-        ctaLink={articles.length > 0 ? `/article/${articles[0].slug}` : `/`}
+      {/* 1. Hero Banner 轮播 */}
+      <HeroCarousel
+        slides={bannerArticles.map((article) => ({
+          title: article.title,
+          subtitle: 'Intelligent Home Technology',
+          description:
+            article.excerpt ||
+            'Expert reviews and guides for smart home appliances. Discover the best intelligent toilets, robot vacuums, lawn mowers, and more.',
+          image: article.featuredImage,
+          ctaText: 'Read Full Review',
+          ctaLink: `/article/${article.slug}`,
+        }))}
       />
 
       {/* 2. Featured This Week */}

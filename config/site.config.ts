@@ -60,5 +60,12 @@ export const siteConfig: SiteConfig = {
       icon: '💡',
       description: 'Intelligent lighting and smart home illumination'
     },
+    {
+      id: 'category-8',
+      name: 'Home Theater',
+      slug: 'home-theater',
+      icon: '🎬',
+      description: '4K TVs, Mini-LED panels, laser projectors and home cinema reviews'
+    },
   ],
 };
