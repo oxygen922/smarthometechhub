@@ -15,7 +15,7 @@ featuredImage: "https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/hom
 
 The pitch sounds like a parlour trick: a box the size of a large soundbar, sitting a few inches from your wall, throwing a picture bigger than anything Best Buy sells. Then you unbox the Hisense PX4 Pro, set it on the media console, press power, and the trick stops being a trick. The wall lights up at 120 inches, autofocus and auto-keystone square the image in about ten seconds, and the scale does something no TV can do: it changes the room.
 
-![Hisense PX4 Pro ultra-short-throw laser cinema](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-px4-pro-review/product.jpg)
+![Hisense PX4 Pro ultra-short-throw laser cinema](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-px4-pro-review/product2.jpg)
 
 The PX4 Pro lists at **$3,999.99** and has sold as low as **$3,499** this season, at Hisense's own store and on [Amazon](https://www.amazon.com/s?k=Hisense+PX4+Pro+projector). That's roughly half the price of a good 98-inch TV, for a picture twice the diagonal. We spent time with it the way an owner would, streaming, gaming, blinds up, blinds down. Here's the visit.
 

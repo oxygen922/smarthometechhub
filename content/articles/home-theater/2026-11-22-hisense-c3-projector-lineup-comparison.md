@@ -9,7 +9,7 @@ tags: ["home-theater", "projectors", "hisense", "c3", "laser-projector", "gimbal
 rating: 4.7
 price: "From $2,298"
 pinned: true
-featuredImage: "https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-c3-projector-lineup-comparison/hero.jpg"
+featuredImage: "https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-c3-projector-lineup-comparison/hero2.jpg"
 ---
 
 # Which Hisense C3 Projector Should You Buy? Match Your Room in 30 Seconds
@@ -27,7 +27,7 @@ So the only real question is which brightness matches your room. Start here:
 
 ## Why this family works
 
-![Hisense C3 triple-laser gimbal projector](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-c3-projector-lineup-comparison/c3-main.jpg)
+![Hisense C3 triple-laser gimbal projector](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-c3-projector-lineup-comparison/c3-main2.jpg)
 
 The C3 takes the triple-laser engine from Hisense's fixed laser cinema boxes, the line specialists have reviewed warmly for years, and mounts it in a rotating gimbal. Aim it at the bedroom ceiling, swivel it to a side wall, carry it to the backyard. Autofocus, auto keystone, screen fitting and obstacle avoidance re-square the picture after every move, and optical zoom (1.6x, rising to 2x on the Ultra Max) fills the wall optically, preserving full 4K sharpness where digital keystone quietly eats it.
 
@@ -37,7 +37,7 @@ The shared equipment list runs long: a seven-level iris holding up to 5,000:1 dy
 
 ## The four, in detail
 
-![Hisense C3 Pro triple-laser projector, 3,000 ANSI lumens](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-c3-projector-lineup-comparison/c3-pro.jpg)
+![Hisense C3 Pro triple-laser projector, 3,000 ANSI lumens](https://pub-72fc2c7201a645ffa1e5b65b44be1573.r2.dev/articles/home-theater/hisense-c3-projector-lineup-comparison/c3-pro2.jpg)
 
 **[Hisense C3](https://www.amazon.com/dp/B0H42SRKV3), 2,500 ANSI, the entry.** The complete package at the family's lowest price: triple-laser color, the gimbal, JBL sound, IMAX Enhanced, Netflix built in. In a room with controlled light it throws a rich 100-to-120-inch picture. The smart buy for first projectors and dark rooms.
 
